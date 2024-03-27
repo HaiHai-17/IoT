@@ -1,68 +1,103 @@
-#define BLYNK_TEMPLATE_ID "TMPL6IHMQSCKT"
-#define BLYNK_TEMPLATE_NAME "VUON THI"
-#define BLYNK_AUTH_TOKEN "rg3IsJBrkeswaJfAixPHDLg9KFAZbWms"
-
-#include <WiFi.h>
-#include <BlynkSimpleEsp32.h>
+#include <Wire.h>
+#include <Adafruit_Sensor.h>
+#include <Adafruit_SSD1306.h>
 #include <DHT.h>
 
-// DHT define
-#define DHTTYPE DHT11   // DHT 11
-#define DHTPIN 2
+#define DHTPIN 19 
+#define DHTTYPE DHT11
+
+#define OLED_RESET    -1  // Không sử dụng chức năng reset
+Adafruit_SSD1306 display(128, 32, &Wire, OLED_RESET);
+
 DHT dht(DHTPIN, DHTTYPE);
 
-// Define LED
-#define LED 4
-WidgetLED LED_ON_APP(V2);
-int button;
+const int sensorRain = 23;
+const int sensorHuman = 18;
 
-char auth[] = BLYNK_AUTH_TOKEN;
-// Your WiFi credentials.
-// Set password to "" for open networks.
-char ssid[] = "HOI DONG PHE 2.4Ghz";
-char pass[] = "0336468470";
+int rainValue, humanValue;
+float humidity, temperature;
 
-void setup()
-{
-  // Debug console
-  pinMode(LED, OUTPUT);
-  Serial.begin(115200);
+void setup() {
+  Serial.begin(9600);
+  pinMode(sensorRain, INPUT);
+  pinMode(sensorHuman, INPUT);
+
   dht.begin();
 
-  Blynk.begin(auth, ssid, pass);
-}
-
-BLYNK_WRITE(V3) {
-  button = param.asInt();
-  if(button == 1) {
-    digitalWrite(LED, HIGH);
-    LED_ON_APP.on();
-  } else {
-    digitalWrite(LED, LOW);
-    LED_ON_APP.off();
-  }
-}
-
-void loop()
-{
-  Blynk.run();
-  // Read Temp
-  float t = dht.readTemperature();
-  // Read Humi
-  float h = dht.readHumidity();
-  // Check isRead ?
-  if (isnan(h) || isnan(t)) {
-    delay(500);
-    Serial.println("Failed to read from DHT sensor!\n");
-    return;
+  // Khởi tạo màn hình OLED
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) {
+    Serial.println(F("SSD1306 initialization failed"));
+    for(;;);
   }
 
-  Blynk.virtualWrite(V0, t);
-  Blynk.virtualWrite(V1, h);
-
-  Serial.print("\n");
-  Serial.print("Humidity: " + String(h) + "%");
-  Serial.print("\t");
-  Serial.print("Temperature:" + String(t) + " C");
+  // Hiển thị thông tin khởi động trên màn hình OLED
+  display.display();
   delay(2000);
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0,0);
+  display.println("ESP32 DHT11 OLED");
+  display.display();
+  delay(2000);
+  display.clearDisplay();
+}
+
+void loop() {
+  // Đọc dữ liệu từ cảm biến DHT11
+  humidity = dht.readHumidity();
+  temperature = dht.readTemperature();
+
+  // Đọc dữ liệu từ cảm biến mưa
+  rainValue = digitalRead(sensorRain);
+  // Đọc dữ liệu từ cảm biến nguoi
+  humanValue = digitalRead(sensorHuman);
+  seterrorSensor();
+  // Hiển thị dữ liệu lên màn hình OLED
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0,0);
+  display.print("Nhiet do: ");
+  display.print(temperature);
+  display.println(" C");
+  display.print("Do am: ");
+  display.print(humidity);
+  display.println(" %");
+  display.print("Mua: ");
+  setvalueRain();
+  display.print("Nguoi: ");
+  setvalueHuman();
+  display.display();
+  
+  delay(2000); // Chờ 2 giây trước khi đọc dữ liệu lại
+}
+
+void seterrorSensor(){
+  if(isnan(humanValue)){
+    display.print("LOI: cam bien nguoi!");
+  }
+  if(isnan(rainValue)){
+    display.print("LOI: cam bien mua!");
+  }
+  if(isnan(humidity) ||  isnan(temperature)){
+    display.print("LOI: cam bien do am!");
+    display.print("LOI: cam bien nhiet do!");
+  }
+}
+
+void setvalueRain(){
+  if (rainValue == 0) {
+    display.println("Co mua");
+  } else {
+    display.println("Khong mua");
+  }
+}
+
+void setvalueHuman(){
+  if (humanValue == 1) {
+    display.println("Co nguoi");
+  } else {
+    display.println("Khong nguoi");
+  }
 }
