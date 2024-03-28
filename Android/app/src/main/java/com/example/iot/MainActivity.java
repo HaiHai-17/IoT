@@ -26,7 +26,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(v.isSelected()) {
-                    pump1.setImageResource(R.drawable.pumpcolor);
+                    pump1.setImageResource(R.drawable.pressure);
                     Toast.makeText(MainActivity.this, "Máy bơm 1 đã mở!", Toast.LENGTH_SHORT).show();
                     v.setSelected(false);
                 }
@@ -42,7 +42,7 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onClick(View v) {
                 if(v.isSelected()) {
-                    pump2.setImageResource(R.drawable.pumpcolor);
+                    pump2.setImageResource(R.drawable.pressure);
                     Toast.makeText(MainActivity.this, "Máy bơm 2 đã mở!", Toast.LENGTH_SHORT).show();
                     v.setSelected(false);
                 }
@@ -64,8 +64,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_menu) {
-            // Xử lý sự kiện khi mục menu được chọn
+        if (id == R.id.action_exit) {
+            finish();
             return true;
         }
         return super.onOptionsItemSelected(item);
