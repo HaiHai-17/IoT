@@ -2,6 +2,7 @@ package com.example.iot2;
 
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -64,12 +65,17 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         int id = item.getItemId();
-        if (id == R.id.action_exit) {
+        if (id == R.id.action_setting) {
+            Intent intent = new Intent(this, SettingMenu.class);
+            startActivity(intent);
+            return true;
+        } else if (id == R.id.action_exit) {
             finish();
             return true;
         }
         return super.onOptionsItemSelected(item);
     }
+
 
 }
 

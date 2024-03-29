@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content">
+
+    <TextView
+        android:id="@+id/txtTheme"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="30dp"
+        android:layout_marginTop="10dp"
+        android:layout_marginBottom="10dp"
+        android:text="Đổi sang nền đen"
+        android:textSize="25sp"
+         />
+
+    <Switch
+        android:id="@+id/swTheme"
+        android:layout_width="wrap_content"
+        android:layout_height="35dp"
+        android:layout_alignParentRight="true"
+        android:layout_marginTop="10dp"
+        android:layout_marginRight="30dp"
+        android:layout_marginBottom="10dp"
+        android:layout_toRightOf="@+id/txtTheme" />
+
+</RelativeLayout>
