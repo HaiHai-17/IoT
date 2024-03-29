@@ -1,10 +1,13 @@
 package com.example.iot2;
 
 import android.content.Context;
+import android.provider.Settings;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
+import android.widget.CompoundButton;
+import android.widget.Switch;
 import android.widget.TextView;
 
 import java.util.ArrayList;
@@ -43,6 +46,22 @@ public class MenuSettingAdapter extends BaseAdapter {
         MenuList ds = data_list.get(position);
         TextView textView = convertView.findViewById(R.id.txtTheme);
         textView.setText(ds.getName_setting());
+
+        Switch aSwitch = convertView.findViewById(R.id.swTheme);
+
+        if(ds.isShowSwitch()){
+            aSwitch.setVisibility(View.VISIBLE);
+            aSwitch.setChecked(ds.isEnable());
+            aSwitch.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    ds.setEnable(isChecked);
+                }
+            });
+        }
+        else{
+            aSwitch.setVisibility(View.GONE);
+        }
 
         return convertView;
     }

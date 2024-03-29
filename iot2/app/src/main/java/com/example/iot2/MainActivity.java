@@ -1,12 +1,15 @@
 package com.example.iot2;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.AppCompatActivity;
 
 import android.content.Intent;
 import android.os.Bundle;
+import android.view.ContextMenu;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.Toast;
 
@@ -23,42 +26,30 @@ public class MainActivity extends AppCompatActivity {
         rain = findViewById(R.id.imgRain);
         human = findViewById(R.id.imgHuman);
 
+        NotificationPump1.createNotificationChannel(this);
+        NotificationPump2.createNotificationChannel(this);
+
+        registerForContextMenu(pump1);
+        registerForContextMenu(pump2);
+
         pump1.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(v.isSelected()) {
-                    pump1.setImageResource(R.drawable.pressure);
-                    Toast.makeText(MainActivity.this, "Máy bơm 1 đã mở!", Toast.LENGTH_SHORT).show();
-                    v.setSelected(false);
-                }
-                else{
-                    pump1.setImageResource(R.drawable.pumpnocolor);
-                    Toast.makeText(MainActivity.this, "Máy bơm 1 đã đóng!", Toast.LENGTH_SHORT).show();
-                    v.setSelected(true);
-                }
+                togglePump(pump1);
             }
         });
 
         pump2.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                if(v.isSelected()) {
-                    pump2.setImageResource(R.drawable.pressure);
-                    Toast.makeText(MainActivity.this, "Máy bơm 2 đã mở!", Toast.LENGTH_SHORT).show();
-                    v.setSelected(false);
-                }
-                else{
-                    pump2.setImageResource(R.drawable.pumpnocolor);
-                    Toast.makeText(MainActivity.this, "Máy bơm 2 đã đóng!", Toast.LENGTH_SHORT).show();
-                    v.setSelected(true);
-                }
+                togglePump(pump2);
             }
         });
     }
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_layout, menu);
+        getMenuInflater().inflate(R.menu.menu_pump, menu);
         return true;
     }
 
@@ -76,6 +67,42 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
+    @Override
+    public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
+        getMenuInflater().inflate(R.menu.menu_pump, menu);
+        super.onCreateContextMenu(menu, v, menuInfo);
+    }
 
+    @Override
+    public boolean onContextItemSelected(@NonNull MenuItem item) {
+        AdapterView.AdapterContextMenuInfo info =(AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
+        int position = info.position;
+        int id =item.getItemId();
+        if(id == R.id.hengio) Toast.makeText(MainActivity.this, "Đây là chức năng hẹn giờ.", Toast.LENGTH_SHORT).show();
+        else if (id == R.id.datlich) Toast.makeText(MainActivity.this, "Đây là chức năng đặt lịch.", Toast.LENGTH_SHORT).show();
+        return super.onContextItemSelected(item);
+    }
+
+    private void togglePump(ImageView pumpImageView) {
+        if (pumpImageView.isSelected()) {
+            pumpImageView.setImageResource(R.drawable.pumpnocolor);
+            showToastAndNotify("Đóng", pumpImageView);
+            pumpImageView.setSelected(false);
+        } else {
+            pumpImageView.setImageResource(R.drawable.pressure);
+            showToastAndNotify("Mở", pumpImageView);
+            pumpImageView.setSelected(true);
+        }
+    }
+
+    private void showToastAndNotify(String status, ImageView pumpImageView) {
+        String pumpName = pumpImageView == pump1 ? "Máy bơm 1" : "Máy bơm 2";
+        Toast.makeText(MainActivity.this, pumpName + " đã " + status + "!", Toast.LENGTH_SHORT).show();
+        if (pumpImageView == pump1) {
+            NotificationPump1.showNotification(MainActivity.this, "ESP32 IOT", pumpName + ": " + status.toUpperCase());
+        } else {
+            NotificationPump2.showNotification(MainActivity.this, "ESP32 IOT", pumpName + ": " + status.toUpperCase());
+        }
+    }
 }
 

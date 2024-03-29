@@ -2,6 +2,7 @@ package com.example.iot2;
 
 import android.os.Bundle;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.Switch;
 
@@ -21,28 +22,22 @@ public class SettingMenu extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.setting_menu_layout);
 
+
         data_list = new ArrayList<>();
 
-        data_list.add(new MenuList("Đổi sang nền đen"));
-        data_list.add(new MenuList("Khác"));
+        data_list.add(new MenuList("Đổi sang nền đen", false, true));
+        data_list.add(new MenuList("Khác", false, false));
 
         ListView listView = findViewById(R.id.list_setting);
         MenuSettingAdapter menuSettingAdapter = new MenuSettingAdapter(this, R.layout.icon_menu_setting ,data_list);
         listView.setAdapter(menuSettingAdapter);
 
-        aSwitch = findViewById(R.id.swTheme);
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-        aSwitch.setOnCheckedChangeListener((buttonView, isChecked) -> {
-            if (isChecked) {
-                // Nếu Switch được bật, sử dụng Theme Dark
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES);
-            } else {
-                // Nếu Switch được tắt, sử dụng Theme Light
-                AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_NO);
             }
-
-            // Re-create activity để áp dụng theme mới
-            recreate();
         });
+
     }
 }
