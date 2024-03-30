@@ -3,12 +3,17 @@
 #include <DHT.h>
 #include <WiFi.h>
 #include <FirebaseESP32.h>
+#include <addons/RTDBHelper.h>
+#include <addons/TokenHelper.h>
 
 #define WIFI_SSID "HOI DONG PHE 2.4Ghz"
 #define WIFI_PASSWORD "0336468470"
 
-#define FIREBASE_HOST "esp32iot-3a610-default-rtdb.firebaseio.com"
-#define FIREBASE_AUTH "ce3k6CnmowW86AUF36xJVCK5jkaWDKPDqbSey4hz"
+#define API_KEY "AIzaSyA1omfSWO-G6lS7tMdduZF3i78oiv_1wLM"
+#define USER_EMAIL "kudohainguyen@gmail.com"
+#define USER_PASSWORD "cadss14789@"
+#define DATABASE_URL "esp32iot-3a610-default-rtdb.firebaseio.com"
+//#define FIREBASE_AUTH "ce3k6CnmowW86AUF36xJVCK5jkaWDKPDqbSey4hz"
 
 #define DHTPIN 19
 #define DHTTYPE DHT11
@@ -25,6 +30,9 @@ int rainValue, humanValue;
 float humidity, temperature;
 
 FirebaseData firebaseData;
+
+FirebaseAuth auth;
+FirebaseConfig config;
 
 unsigned long dataMillis = 0;
 int count = 0;
@@ -45,7 +53,18 @@ void setup()
   Serial.println(WiFi.localIP());
   Serial.println();
 
-  Firebase.begin(FIREBASE_HOST, FIREBASE_AUTH);
+  Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
+
+  config.api_key = API_KEY;
+  auth.user.email = USER_EMAIL;
+  auth.user.password = USER_PASSWORD;
+  config.database_url = DATABASE_URL;
+
+  config.token_status_callback = tokenStatusCallback;
+  Firebase.reconnectNetwork(true);
+  firebaseData.setBSSLBufferSize(4096, 1024);
+  Firebase.begin(&config, &auth);
+  Firebase.setDoubleDigits(5);
 
   pinMode(sensorRain, INPUT);
   pinMode(sensorHuman, INPUT);
@@ -55,7 +74,7 @@ void setup()
   // Khởi tạo màn hình OLED
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
   {
-    Serial.println(F("Khởi tạo SSD1306 thất bại"));
+    Serial.println(F("Khoi tao SSD1306 that bai"));
     for (;;)
       ;
   }
@@ -90,8 +109,8 @@ void loop()
     {
       if (!isnan(humidity) && !isnan(temperature))
       {
-        Firebase.pushFloat(firebaseData, "/temperature", temperature);
-        Firebase.pushFloat(firebaseData, "/humidity", humidity);
+        Firebase.setFloat(firebaseData, "/temperature", temperature);
+        Firebase.setFloat(firebaseData, "/humidity", humidity);
       }
       else
       {
@@ -108,15 +127,15 @@ void seterrorSensor()
   display.setTextColor(SSD1306_WHITE);
   if (isnan(humanValue))
   {
-    display.println("Lỗi: Cảm biến người!");
+    display.println("LOI: cam bien nguoi");
   }
   if (isnan(rainValue))
   {
-    display.println("Lỗi: Cảm biến mưa!");
+    display.println("LOI: cam bien mua");
   }
   if (isnan(humidity) || isnan(temperature))
   {
-    display.println("Lỗi: Cảm biến độ ẩm hoặc nhiệt độ!");
+    display.println("LOI: cam bien do");
   }
 }
 
@@ -124,11 +143,11 @@ void setvalueRain()
 {
   if (rainValue == 0)
   {
-    display.println("Có mưa");
+    display.println("CO");
   }
   else
   {
-    display.println("Không mưa");
+    display.println("KHONG");
   }
 }
 
@@ -136,11 +155,11 @@ void setvalueHuman()
 {
   if (humanValue == 1)
   {
-    display.println("Có người");
+    display.println("CO");
   }
   else
   {
-    display.println("Không có người");
+    display.println("KHONG");
   }
 }
 
@@ -150,15 +169,15 @@ void setDisplay()
   display.setTextSize(1);
   display.setTextColor(SSD1306_WHITE);
   display.setCursor(0, 0);
-  display.print("Nhiệt độ: ");
+  display.print("Nhiet do: ");
   display.print(temperature);
   display.println(" C");
-  display.print("Độ ẩm: ");
+  display.print("Do am: ");
   display.print(humidity);
   display.println(" %");
-  display.print("Mưa: ");
+  display.print("Mua: ");
   setvalueRain();
-  display.print("Người: ");
+  display.print("Nguoi: ");
   setvalueHuman();
   seterrorSensor(); // Hiển thị lỗi nếu có
   display.display();
