@@ -43,9 +43,14 @@ public class MainActivity extends AppCompatActivity {
         registerForContextMenu(pump1);
         registerForContextMenu(pump2);
 
-//        DatabaseReference databaseHumi = FirebaseDatabase.getInstance().getReference().child("humidity");
-//        DatabaseReference databaseTemp = FirebaseDatabase.getInstance().getReference().child("temperature");
-        DatabaseReference databaseRain = FirebaseDatabase.getInstance().getReference().child("rain");
+        NotificationPump1.createNotificationChannel(MainActivity.this);
+        NotificationPump2.createNotificationChannel(MainActivity.this);
+        NotificationRain.createNotificationChannel(MainActivity.this);
+        NotificationHuman.createNotificationChannel(MainActivity.this);
+
+        DatabaseReference databaseHumi = FirebaseDatabase.getInstance().getReference("humidity");
+        DatabaseReference databaseTemp = FirebaseDatabase.getInstance().getReference("temperature");
+        DatabaseReference databaseRain = FirebaseDatabase.getInstance().getReference("rain");
         DatabaseReference databaseHuman = FirebaseDatabase.getInstance().getReference("human");
 
         pump1.setOnClickListener(new View.OnClickListener() {
@@ -65,26 +70,15 @@ public class MainActivity extends AppCompatActivity {
         databaseRain.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                // Kiểm tra xem dữ liệu có tồn tại không
-                if (snapshot.exists()) {
-                    // Lấy giá trị từ snapshot
                     String value = snapshot.getValue(String.class);
-                    // Kiểm tra xem giá trị có khác null không
-                    if (value != null) {
-                        // So sánh giá trị với chuỗi "1"
-                        if (value.equals("1")) {
-                            rain.setImageResource(R.drawable.light_rain);
-                        } else {
-                            rain.setImageResource(R.drawable.rain_day);
-                        }
-                    } else {
-                        // Xử lý trường hợp giá trị là null
-                        // Ví dụ: Hiển thị một hình ảnh mặc định hoặc thông báo lỗi
+                    if(value.equals("co")) {
+                        rain.setImageResource(R.drawable.light_rain);
+                        NotificationRain.showNotification(MainActivity.this, "ESP32 IOT", "Trời đang có mưa!!!");
                     }
-                } else {
-                    // Xử lý trường hợp không có dữ liệu trong nút "rain"
-                    // Ví dụ: Hiển thị một hình ảnh mặc định hoặc thông báo lỗi
-                }
+                    else {
+                        rain.setImageResource(R.drawable.rain_day);
+                        NotificationRain.showNotification(MainActivity.this, "ESP32 IOT", "Trời không có mưa!!!");
+                    }
             }
 
             @Override
@@ -98,26 +92,13 @@ public class MainActivity extends AppCompatActivity {
         databaseHuman.addValueEventListener(new ValueEventListener() {
             @Override
             public void onDataChange(@NonNull DataSnapshot snapshot) {
-                // Kiểm tra xem dữ liệu có tồn tại không
-                if (snapshot.exists()) {
-                    // Lấy giá trị từ snapshot
                     String value = snapshot.getValue(String.class);
-                    // Kiểm tra xem giá trị có khác null không
-                    if (value != null) {
-                        // So sánh giá trị với chuỗi "1"
-                        if (value.equals("1")) {
-                            human.setImageResource(R.drawable.human);
-                        } else {
-                            human.setImageResource(R.drawable.nohuman);
-                        }
-                    } else {
-                        // Xử lý trường hợp giá trị là null
-                        // Ví dụ: Hiển thị một hình ảnh mặc định hoặc thông báo lỗi
+                    if(value.equals("co")) {
+                        human.setImageResource(R.drawable.human);
+                        NotificationHuman.showNotification(MainActivity.this, "ESP32 IOT", "Có người vào vườn!!!");
                     }
-                } else {
-                    // Xử lý trường hợp không có dữ liệu trong nút "human"
-                    // Ví dụ: Hiển thị một hình ảnh mặc định hoặc thông báo lỗi
-                }
+                    else
+                        human.setImageResource(R.drawable.nohuman);
             }
 
             @Override
