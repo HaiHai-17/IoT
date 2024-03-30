@@ -8,10 +8,10 @@
             <InsightsFilterSettings>
               <option name="connection">
                 <ConnectionSetting>
-                  <option name="appId" value="PLACEHOLDER" />
-                  <option name="mobileSdkAppId" value="" />
-                  <option name="projectId" value="" />
-                  <option name="projectNumber" value="" />
+                  <option name="appId" value="com.example.iot2" />
+                  <option name="mobileSdkAppId" value="1:738256863327:android:69aa973c321063b44c9bea" />
+                  <option name="projectId" value="esp32iot-3a610" />
+                  <option name="projectNumber" value="738256863327" />
                 </ConnectionSetting>
               </option>
               <option name="signal" value="SIGNAL_UNSPECIFIED" />

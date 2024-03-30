@@ -13,6 +13,9 @@ import android.widget.AdapterView;
 import android.widget.ImageView;
 import android.widget.Toast;
 
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+
 public class MainActivity extends AppCompatActivity {
 
     ImageView pump1, pump2, rain, human;
@@ -100,8 +103,14 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(MainActivity.this, pumpName + " đã " + status + "!", Toast.LENGTH_SHORT).show();
         if (pumpImageView == pump1) {
             NotificationPump1.showNotification(MainActivity.this, "ESP32 IOT", pumpName + ": " + status.toUpperCase());
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            DatabaseReference myRef = database.getReference(pumpName);
+            myRef.setValue(status);
         } else {
             NotificationPump2.showNotification(MainActivity.this, "ESP32 IOT", pumpName + ": " + status.toUpperCase());
+            FirebaseDatabase database = FirebaseDatabase.getInstance();
+            DatabaseReference myRef = database.getReference(pumpName);
+            myRef.setValue(status);
         }
     }
 }

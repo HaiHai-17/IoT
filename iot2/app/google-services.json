@@ -1,0 +1,30 @@
+{
+  "project_info": {
+    "project_number": "738256863327",
+    "firebase_url": "https://esp32iot-3a610-default-rtdb.firebaseio.com",
+    "project_id": "esp32iot-3a610",
+    "storage_bucket": "esp32iot-3a610.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:738256863327:android:69aa973c321063b44c9bea",
+        "android_client_info": {
+          "package_name": "com.example.iot2"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA1omfSWO-G6lS7tMdduZF3i78oiv_1wLM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
