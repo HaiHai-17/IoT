@@ -11,29 +11,42 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
+import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.google.firebase.FirebaseApp;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
 import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
 public class MainActivity extends AppCompatActivity {
 
     ImageView pump1, pump2, rain, human;
+    ProgressBar humi_bar, temp_bar;
+    ValueEventListener valueHumi, valueTemp;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
+        FirebaseApp.initializeApp(this);
+
         pump1 = findViewById(R.id.imgPump1);
         pump2 = findViewById(R.id.imgPump2);
         rain = findViewById(R.id.imgRain);
         human = findViewById(R.id.imgHuman);
-
-        NotificationPump1.createNotificationChannel(this);
-        NotificationPump2.createNotificationChannel(this);
+//        humi_bar = findViewById(R.id.barHumi);
+//        temp_bar = findViewById(R.id.barTemp);
 
         registerForContextMenu(pump1);
         registerForContextMenu(pump2);
+
+//        DatabaseReference databaseHumi = FirebaseDatabase.getInstance().getReference().child("humidity");
+//        DatabaseReference databaseTemp = FirebaseDatabase.getInstance().getReference().child("temperature");
+        DatabaseReference databaseRain = FirebaseDatabase.getInstance().getReference().child("rain");
+        DatabaseReference databaseHuman = FirebaseDatabase.getInstance().getReference("human");
 
         pump1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -48,6 +61,72 @@ public class MainActivity extends AppCompatActivity {
                 togglePump(pump2);
             }
         });
+
+        databaseRain.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                // Kiểm tra xem dữ liệu có tồn tại không
+                if (snapshot.exists()) {
+                    // Lấy giá trị từ snapshot
+                    String value = snapshot.getValue(String.class);
+                    // Kiểm tra xem giá trị có khác null không
+                    if (value != null) {
+                        // So sánh giá trị với chuỗi "1"
+                        if (value.equals("1")) {
+                            rain.setImageResource(R.drawable.light_rain);
+                        } else {
+                            rain.setImageResource(R.drawable.rain_day);
+                        }
+                    } else {
+                        // Xử lý trường hợp giá trị là null
+                        // Ví dụ: Hiển thị một hình ảnh mặc định hoặc thông báo lỗi
+                    }
+                } else {
+                    // Xử lý trường hợp không có dữ liệu trong nút "rain"
+                    // Ví dụ: Hiển thị một hình ảnh mặc định hoặc thông báo lỗi
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Xử lý khi có lỗi xảy ra trong quá trình đọc dữ liệu từ Firebase
+                // Ví dụ: Hiển thị một thông báo lỗi
+            }
+        });
+
+
+        databaseHuman.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                // Kiểm tra xem dữ liệu có tồn tại không
+                if (snapshot.exists()) {
+                    // Lấy giá trị từ snapshot
+                    String value = snapshot.getValue(String.class);
+                    // Kiểm tra xem giá trị có khác null không
+                    if (value != null) {
+                        // So sánh giá trị với chuỗi "1"
+                        if (value.equals("1")) {
+                            human.setImageResource(R.drawable.human);
+                        } else {
+                            human.setImageResource(R.drawable.nohuman);
+                        }
+                    } else {
+                        // Xử lý trường hợp giá trị là null
+                        // Ví dụ: Hiển thị một hình ảnh mặc định hoặc thông báo lỗi
+                    }
+                } else {
+                    // Xử lý trường hợp không có dữ liệu trong nút "human"
+                    // Ví dụ: Hiển thị một hình ảnh mặc định hoặc thông báo lỗi
+                }
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                // Xử lý khi có lỗi xảy ra trong quá trình đọc dữ liệu từ Firebase
+                // Ví dụ: Hiển thị một thông báo lỗi
+            }
+        });
+
     }
 
     @Override
@@ -102,15 +181,21 @@ public class MainActivity extends AppCompatActivity {
         String pumpName = pumpImageView == pump1 ? "Máy bơm 1" : "Máy bơm 2";
         Toast.makeText(MainActivity.this, pumpName + " đã " + status + "!", Toast.LENGTH_SHORT).show();
         if (pumpImageView == pump1) {
-            NotificationPump1.showNotification(MainActivity.this, "ESP32 IOT", pumpName + ": " + status.toUpperCase());
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            DatabaseReference myRef = database.getReference(pumpName);
-            myRef.setValue(status);
+            DatabaseReference myRef = database.getReference("pump1");
+            if(status.equals("Đóng")) {
+                myRef.setValue(0);
+            } else if (status.equals("Mở")) {
+                myRef.setValue(1);
+            }
         } else {
-            NotificationPump2.showNotification(MainActivity.this, "ESP32 IOT", pumpName + ": " + status.toUpperCase());
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            DatabaseReference myRef = database.getReference(pumpName);
-            myRef.setValue(status);
+            DatabaseReference myRef = database.getReference("pump2");
+            if(status.equals("Đóng")) {
+                myRef.setValue(0);
+            } else if (status.equals("Mở")) {
+                myRef.setValue(1);
+            }
         }
     }
 }
