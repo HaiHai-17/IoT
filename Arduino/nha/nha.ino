@@ -5,6 +5,16 @@
 #include <FirebaseESP32.h>
 #include <addons/RTDBHelper.h>
 #include <addons/TokenHelper.h>
+#include <WebServer.h>
+#include <ESPmDNS.h>
+#include <HTTPUpdateServer.h>
+//Cấu hình server update OTA
+const char* host = "ESP32";
+const char* updatePath = "/update";
+const char* updateUsername = "admin";
+const char* updatePassword = "admin";
+WebServer webServer(80);
+HTTPUpdateServer httpUpdater;
 //Cấu hình wifi
 #define WIFI_SSID "HOI DONG PHE 2.4Ghz"
 #define WIFI_PASSWORD "0336468470"
@@ -37,6 +47,28 @@ int count = 0;
 // Chân máy bơm
 const int pump1 = 5;
 const int pump2 = 17;
+//Trang update OTA
+const char MainPage[] PROGMEM = R"=====(
+  <!DOCTYPE html> 
+  <html>
+   <head> 
+       <title>ESP32</title> 
+       <style> 
+          body{
+            text-align: center;
+          }
+       </style>
+       <meta name="viewport" content="width=device-width,user-scalable=0" charset="UTF-8">
+   </head>
+   <body> 
+      <div>
+        <button onclick="window.location.href='/update'">UPLOAD FIRMWARE</button><br><br>
+      </div>
+      <script>
+      </script>
+   </body> 
+  </html>
+)=====";
 
 void setup()
 {
@@ -53,6 +85,23 @@ void setup()
   Serial.print("Kết nối thành công với IP: ");
   Serial.println(WiFi.localIP());
   Serial.println();
+  //Khởi động update OTA
+  if (!MDNS.begin(host)) {
+    Serial.println("Lỗi khởi động mDNS!");
+    while (1) {
+      delay(1000);
+    }
+  }
+
+  MDNS.addService("http", "tcp", 80);
+
+  httpUpdater.setup(&webServer, updatePath, updateUsername, updatePassword);
+  webServer.on("/", [](){
+    String s = MainPage;
+    webServer.send(200, "text/html", s);
+  });
+  webServer.begin();
+  Serial.println("Khởi động thành công Webserver.");
   //Thiết lập kết nối Firebase
   Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
   config.api_key = API_KEY;
@@ -94,6 +143,8 @@ void setup()
 
 void loop()
 {
+  //MDNS.update();
+  webServer.handleClient();
   if (millis() - dataMillis > 1000)
   {
     dataMillis = millis();
