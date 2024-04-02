@@ -15,8 +15,6 @@ import java.util.ArrayList;
 public class SettingMenu extends AppCompatActivity {
 
     ArrayList<MenuList> data_list;
-    Switch aSwitch;
-    View view;
     @Override
     protected void onCreate(@Nullable Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);

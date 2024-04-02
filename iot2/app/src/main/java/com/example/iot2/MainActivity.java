@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.github.lzyzsd.circleprogress.CircleProgress;
 import com.google.firebase.FirebaseApp;
 import com.google.firebase.database.DataSnapshot;
 import com.google.firebase.database.DatabaseError;
@@ -24,8 +25,8 @@ import com.google.firebase.database.ValueEventListener;
 public class MainActivity extends AppCompatActivity {
 
     ImageView pump1, pump2, rain, human;
-    ProgressBar humi_bar, temp_bar;
-    ValueEventListener valueHumi, valueTemp;
+    CircleProgress humi_bar, temp_bar;
+    int valueHumi, valueTemp;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -37,21 +38,46 @@ public class MainActivity extends AppCompatActivity {
         pump2 = findViewById(R.id.imgPump2);
         rain = findViewById(R.id.imgRain);
         human = findViewById(R.id.imgHuman);
-//        humi_bar = findViewById(R.id.barHumi);
-//        temp_bar = findViewById(R.id.barTemp);
+        humi_bar = findViewById(R.id.barHumi);
+        temp_bar = findViewById(R.id.barTemp);
 
         registerForContextMenu(pump1);
         registerForContextMenu(pump2);
 
-        NotificationPump1.createNotificationChannel(MainActivity.this);
-        NotificationPump2.createNotificationChannel(MainActivity.this);
-        NotificationRain.createNotificationChannel(MainActivity.this);
-        NotificationHuman.createNotificationChannel(MainActivity.this);
+        Notification.createNotificationChannel(MainActivity.this);
 
         DatabaseReference databaseHumi = FirebaseDatabase.getInstance().getReference("humidity");
         DatabaseReference databaseTemp = FirebaseDatabase.getInstance().getReference("temperature");
         DatabaseReference databaseRain = FirebaseDatabase.getInstance().getReference("rain");
         DatabaseReference databaseHuman = FirebaseDatabase.getInstance().getReference("human");
+
+        databaseHumi.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                valueHumi = snapshot.getValue(Integer.class);
+                humi_bar.setProgress(valueHumi);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                humi_bar.setProgress(0);
+                Notification.showNotification(MainActivity.this, "ESP32 IOT", "Lỗi cảm biến nhiệt độ!!!");
+            }
+        });
+
+        databaseTemp.addValueEventListener(new ValueEventListener() {
+            @Override
+            public void onDataChange(@NonNull DataSnapshot snapshot) {
+                valueTemp = snapshot.getValue(Integer.class);
+                temp_bar.setProgress(valueTemp);
+            }
+
+            @Override
+            public void onCancelled(@NonNull DatabaseError error) {
+                temp_bar.setProgress(0);
+                Notification.showNotification(MainActivity.this, "ESP32 IOT", "Lỗi cảm biến nhiệt độ!!!");
+            }
+        });
 
         pump1.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -73,18 +99,19 @@ public class MainActivity extends AppCompatActivity {
                     String value = snapshot.getValue(String.class);
                     if(value.equals("co")) {
                         rain.setImageResource(R.drawable.light_rain);
-                        NotificationRain.showNotification(MainActivity.this, "ESP32 IOT", "Trời đang có mưa!!!");
+                        Notification.showNotification(MainActivity.this, "ESP32 IOT", "Trời đang có mưa!!!");
                     }
                     else {
                         rain.setImageResource(R.drawable.rain_day);
-                        NotificationRain.showNotification(MainActivity.this, "ESP32 IOT", "Trời không có mưa!!!");
+                        Notification.showNotification(MainActivity.this, "ESP32 IOT", "Trời không có mưa!!!");
                     }
             }
 
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 // Xử lý khi có lỗi xảy ra trong quá trình đọc dữ liệu từ Firebase
-                // Ví dụ: Hiển thị một thông báo lỗi
+                rain.setImageResource(R.drawable.caution);
+                Notification.showNotification(MainActivity.this, "ESP32 IOT", "Lỗi cảm biến mưa!!!");
             }
         });
 
@@ -95,7 +122,7 @@ public class MainActivity extends AppCompatActivity {
                     String value = snapshot.getValue(String.class);
                     if(value.equals("co")) {
                         human.setImageResource(R.drawable.human);
-                        NotificationHuman.showNotification(MainActivity.this, "ESP32 IOT", "Có người vào vườn!!!");
+                        Notification.showNotification(MainActivity.this, "ESP32 IOT", "Có người vào vườn!!!");
                     }
                     else
                         human.setImageResource(R.drawable.nohuman);
@@ -104,7 +131,8 @@ public class MainActivity extends AppCompatActivity {
             @Override
             public void onCancelled(@NonNull DatabaseError error) {
                 // Xử lý khi có lỗi xảy ra trong quá trình đọc dữ liệu từ Firebase
-                // Ví dụ: Hiển thị một thông báo lỗi
+                human.setImageResource(R.drawable.caution);
+                Notification.showNotification(MainActivity.this, "ESP32 IOT", "Lỗi cảm biến người!!!");
             }
         });
 
@@ -112,7 +140,7 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        getMenuInflater().inflate(R.menu.menu_pump, menu);
+        getMenuInflater().inflate(R.menu.menu_layout, menu);
         return true;
     }
 
@@ -139,10 +167,12 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
         AdapterView.AdapterContextMenuInfo info =(AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-        int position = info.position;
-        int id =item.getItemId();
-        if(id == R.id.hengio) Toast.makeText(MainActivity.this, "Đây là chức năng hẹn giờ.", Toast.LENGTH_SHORT).show();
-        else if (id == R.id.datlich) Toast.makeText(MainActivity.this, "Đây là chức năng đặt lịch.", Toast.LENGTH_SHORT).show();
+//        int position = info.position;
+        int id = item.getItemId();
+        if(id == R.id.hengio)
+            Toast.makeText(MainActivity.this, "Đây là chức năng hẹn giờ.", Toast.LENGTH_SHORT).show();
+        else if (id == R.id.datlich)
+            Toast.makeText(MainActivity.this, "Đây là chức năng đặt lịch.", Toast.LENGTH_SHORT).show();
         return super.onContextItemSelected(item);
     }
 

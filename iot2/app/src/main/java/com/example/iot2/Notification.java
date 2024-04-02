@@ -4,10 +4,10 @@ import android.app.NotificationManager;
 import android.content.Context;
 import android.os.Build;
 
-public class NotificationRain {
-    private static final String CHANNEL_ID = "5";
-    private static final String CHANNEL_NAME = "Mua";
-    private static final String CHANNEL_DESCRIPTION = "Rain";
+public class Notification {
+    private static final String CHANNEL_ID = "1";
+    private static final String CHANNEL_NAME = "Tat ca";
+    private static final String CHANNEL_DESCRIPTION = "All";
 
     protected static void createNotificationChannel(Context context) {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
