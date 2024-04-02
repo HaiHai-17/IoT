@@ -46,10 +46,10 @@ public class MainActivity extends AppCompatActivity {
 
         Notification.createNotificationChannel(MainActivity.this);
 
-        DatabaseReference databaseHumi = FirebaseDatabase.getInstance().getReference("humidity");
-        DatabaseReference databaseTemp = FirebaseDatabase.getInstance().getReference("temperature");
-        DatabaseReference databaseRain = FirebaseDatabase.getInstance().getReference("rain");
-        DatabaseReference databaseHuman = FirebaseDatabase.getInstance().getReference("human");
+        DatabaseReference databaseHumi = FirebaseDatabase.getInstance().getReference("/dht11/humidity");
+        DatabaseReference databaseTemp = FirebaseDatabase.getInstance().getReference("/dht11/temperature");
+        DatabaseReference databaseRain = FirebaseDatabase.getInstance().getReference("/sensor/rain");
+        DatabaseReference databaseHuman = FirebaseDatabase.getInstance().getReference("/sensor/human");
 
         databaseHumi.addValueEventListener(new ValueEventListener() {
             @Override
@@ -193,7 +193,7 @@ public class MainActivity extends AppCompatActivity {
         Toast.makeText(MainActivity.this, pumpName + " đã " + status + "!", Toast.LENGTH_SHORT).show();
         if (pumpImageView == pump1) {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            DatabaseReference myRef = database.getReference("pump1");
+            DatabaseReference myRef = database.getReference("/pump/pump1");
             if(status.equals("Đóng")) {
                 myRef.setValue(0);
             } else if (status.equals("Mở")) {
@@ -201,7 +201,7 @@ public class MainActivity extends AppCompatActivity {
             }
         } else {
             FirebaseDatabase database = FirebaseDatabase.getInstance();
-            DatabaseReference myRef = database.getReference("pump2");
+            DatabaseReference myRef = database.getReference("/pump/pump2");
             if(status.equals("Đóng")) {
                 myRef.setValue(0);
             } else if (status.equals("Mở")) {

@@ -5,42 +5,43 @@
 #include <FirebaseESP32.h>
 #include <addons/RTDBHelper.h>
 #include <addons/TokenHelper.h>
-
+//Cấu hình wifi
 #define WIFI_SSID "HOI DONG PHE 2.4Ghz"
 #define WIFI_PASSWORD "0336468470"
-
+//Cấu hình Firebase
 #define API_KEY "AIzaSyA1omfSWO-G6lS7tMdduZF3i78oiv_1wLM"
 #define USER_EMAIL "kudohainguyen@gmail.com"
 #define USER_PASSWORD "cadss14789@"
 #define DATABASE_URL "esp32iot-3a610-default-rtdb.firebaseio.com"
-//#define FIREBASE_AUTH "ce3k6CnmowW86AUF36xJVCK5jkaWDKPDqbSey4hz"
-
+//Khởi tạo DHT11
 #define DHTPIN 19
 #define DHTTYPE DHT11
-
+//Khởi tạo OLED
 #define OLED_RESET -1  // Không sử dụng chức năng reset
 Adafruit_SSD1306 display(128, 32, &Wire, OLED_RESET);
-
+//Cấu hình DHT11
 DHT dht(DHTPIN, DHTTYPE);
-
+//Khai báo chân cảm biến
 const int sensorRain = 23;
 const int sensorHuman = 18;
-
-int rainValue, humanValue;
+//Khai báo giá trị
+int rainValue, humanValue, pump1State, pump2State;
 float humidity, temperature;
-
+//Đặ biến Firebase
 FirebaseData firebaseData;
-
 FirebaseAuth auth;
 FirebaseConfig config;
-
+//Sử dụng milis thay cho delay
 unsigned long dataMillis = 0;
 int count = 0;
+// Chân máy bơm
+const int pump1 = 5;
+const int pump2 = 17;
 
 void setup()
 {
   Serial.begin(115200);
-
+  //Kết nối wifi
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Đang kết nối với Wi-Fi");
   while (WiFi.status() != WL_CONNECTED)
@@ -52,25 +53,25 @@ void setup()
   Serial.print("Kết nối thành công với IP: ");
   Serial.println(WiFi.localIP());
   Serial.println();
-
+  //Thiết lập kết nối Firebase
   Serial.printf("Firebase Client v%s\n\n", FIREBASE_CLIENT_VERSION);
-
   config.api_key = API_KEY;
   auth.user.email = USER_EMAIL;
   auth.user.password = USER_PASSWORD;
   config.database_url = DATABASE_URL;
-
+  //Kết nối Firebase
   config.token_status_callback = tokenStatusCallback;
   Firebase.reconnectNetwork(true);
   firebaseData.setBSSLBufferSize(4096, 1024);
   Firebase.begin(&config, &auth);
   Firebase.setDoubleDigits(5);
-
+  //Khai báo chân kết nối 
   pinMode(sensorRain, INPUT);
   pinMode(sensorHuman, INPUT);
-
+  pinMode(pump1, OUTPUT);
+  pinMode(pump2, OUTPUT);
+  //Bắt đầu DHT11
   dht.begin();
-
   // Khởi tạo màn hình OLED
   if (!display.begin(SSD1306_SWITCHCAPVCC, 0x3C))
   {
@@ -78,7 +79,6 @@ void setup()
     for (;;)
       ;
   }
-
   // Hiển thị thông tin khởi động trên màn hình OLED
   display.display();
   delay(2000);
@@ -109,8 +109,8 @@ void loop()
     {
       if (!isnan(humidity) && !isnan(temperature))
       {
-        Firebase.setFloat(firebaseData, "/temperature", temperature);
-        Firebase.setFloat(firebaseData, "/humidity", humidity);
+        Firebase.setFloat(firebaseData, "/dht11/temperature", temperature);
+        Firebase.setFloat(firebaseData, "/dht11/humidity", humidity);
       }
       else
       {
@@ -118,6 +118,7 @@ void loop()
       }
     }
     setDisplay();
+    setRelay();
   }
 }
 
@@ -144,10 +145,12 @@ void setvalueRain()
   if (rainValue == 0)
   {
     display.println("CO");
+    Firebase.setString(firebaseData, "/sensor/rain", "co");
   }
   else
   {
     display.println("KHONG");
+    Firebase.setString(firebaseData, "/sensor/rain", "khong");
   }
 }
 
@@ -156,10 +159,12 @@ void setvalueHuman()
   if (humanValue == 1)
   {
     display.println("CO");
+    Firebase.setString(firebaseData, "/sensor/human", "co");
   }
   else
   {
     display.println("KHONG");
+    Firebase.setString(firebaseData, "/sensor/human", "khong");
   }
 }
 
@@ -182,3 +187,24 @@ void setDisplay()
   seterrorSensor(); // Hiển thị lỗi nếu có
   display.display();
 }
+
+void setRelay() {
+  if (Firebase.getInt(firebaseData, "/pump/pump1")) {
+    if (firebaseData.dataType() == "int") {
+      pump1State = firebaseData.intData();
+      digitalWrite(pump1, pump1State);
+    }
+  } else {
+    digitalWrite(pump1, LOW);
+  }
+  
+  if (Firebase.getInt(firebaseData, "/pump/pump2")) {
+    if (firebaseData.dataType() == "int") {
+      pump2State = firebaseData.intData();
+      digitalWrite(pump2, pump2State);
+    }
+  } else {
+    digitalWrite(pump2, LOW);
+  }
+}
+
