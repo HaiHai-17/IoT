@@ -1,8 +1,12 @@
 package com.example.iot2;
 
 import androidx.annotation.NonNull;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.view.ContextMenu;
@@ -11,7 +15,6 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
-import android.widget.ProgressBar;
 import android.widget.Toast;
 
 import com.github.lzyzsd.circleprogress.CircleProgress;
@@ -22,11 +25,16 @@ import com.google.firebase.database.DatabaseReference;
 import com.google.firebase.database.FirebaseDatabase;
 import com.google.firebase.database.ValueEventListener;
 
+import java.util.Calendar;
+
 public class MainActivity extends AppCompatActivity {
 
     ImageView pump1, pump2, rain, human;
     CircleProgress humi_bar, temp_bar;
     int valueHumi, valueTemp;
+    private Calendar calendar, selectedCalendar;
+    private int year, month, day, hour, minute;
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -50,6 +58,13 @@ public class MainActivity extends AppCompatActivity {
         DatabaseReference databaseTemp = FirebaseDatabase.getInstance().getReference("/dht11/temperature");
         DatabaseReference databaseRain = FirebaseDatabase.getInstance().getReference("/sensor/rain");
         DatabaseReference databaseHuman = FirebaseDatabase.getInstance().getReference("/sensor/human");
+
+        calendar = Calendar.getInstance();
+        year = calendar.get(Calendar.YEAR);
+        month = calendar.get(Calendar.MONTH);
+        day = calendar.get(Calendar.DAY_OF_MONTH);
+        hour = calendar.get(Calendar.HOUR_OF_DAY);
+        minute = calendar.get(Calendar.MINUTE);
 
         databaseHumi.addValueEventListener(new ValueEventListener() {
             @Override
@@ -166,14 +181,14 @@ public class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onContextItemSelected(@NonNull MenuItem item) {
-        AdapterView.AdapterContextMenuInfo info =(AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
-//        int position = info.position;
+        AdapterView.AdapterContextMenuInfo info = (AdapterView.AdapterContextMenuInfo) item.getMenuInfo();
         int id = item.getItemId();
-        if(id == R.id.hengio)
-            Toast.makeText(MainActivity.this, "Đây là chức năng hẹn giờ.", Toast.LENGTH_SHORT).show();
-        else if (id == R.id.datlich)
-            Toast.makeText(MainActivity.this, "Đây là chức năng đặt lịch.", Toast.LENGTH_SHORT).show();
-        return super.onContextItemSelected(item);
+        if (id == R.id.hengio) {
+            showTimePicker();
+        } else if (id == R.id.datlich) {
+            showDatePicker();
+        }
+        return true;
     }
 
     private void togglePump(ImageView pumpImageView) {
@@ -209,5 +224,86 @@ public class MainActivity extends AppCompatActivity {
             }
         }
     }
+
+    // Hiển thị DatePickerDialog
+    private void showDatePicker() {
+        DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this,
+                (view, year, monthOfYear, dayOfMonth) -> {
+                    this.year = year;
+                    this.month = monthOfYear;
+                    this.day = dayOfMonth;
+                    // Hiển thị TimePickerDialog sau khi chọn ngày
+                    showTimePicker();
+                }, year, month, day);
+        datePickerDialog.show();
+    }
+
+    // Hiển thị TimePickerDialog
+    private void showTimePicker() {
+        TimePickerDialog timePickerDialog = new TimePickerDialog(MainActivity.this,
+                (view, hourOfDay, minute) -> {
+                    this.hour = hourOfDay;
+                    this.minute = minute;
+                    // Thực hiện xử lý hẹn giờ hoặc đặt lịch ở đây
+                    handleDateTimeSelection();
+                }, hour, minute, true);
+        timePickerDialog.show();
+    }
+
+    private void handleDateTimeSelection() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Chức năng hẹn giờ");
+        builder.setMessage(hour + "g : " + minute + "p | Ngày: " + day + "/" + (month+1) + "/" + year );
+
+        builder.setPositiveButton("Bật", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                setPumpState(1);
+            }
+        });
+
+        builder.setNegativeButton("Tắt", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                setPumpState(0);
+            }
+        });
+
+        builder.show();
+    }
+
+    private void setPumpState(int state) {
+        FirebaseDatabase database = FirebaseDatabase.getInstance();
+        DatabaseReference myRef = database.getReference("/pump/pump1");
+
+        DatabaseReference scheduleRef = database.getReference("/schedule");
+        scheduleRef.child("hour").setValue(hour);
+        scheduleRef.child("minute").setValue(minute);
+        scheduleRef.child("day").setValue(day);
+        scheduleRef.child("month").setValue(month+1);
+        scheduleRef.child("year").setValue(year);
+
+        selectedCalendar = Calendar.getInstance();
+        selectedCalendar.set(Calendar.YEAR, year);
+        selectedCalendar.set(Calendar.MONTH, month);
+        selectedCalendar.set(Calendar.DAY_OF_MONTH, day);
+        selectedCalendar.set(Calendar.HOUR_OF_DAY, hour);
+        selectedCalendar.set(Calendar.MINUTE, minute);
+        Calendar currentCalendar = Calendar.getInstance();
+
+        if (currentCalendar.compareTo(selectedCalendar) >= 0) {
+            myRef.setValue(state);
+            if (state == 1) {
+                Notification.showNotification(MainActivity.this, "ESP32 IOT", "Máy bơm đã được bật!");
+            } else {
+                Notification.showNotification(MainActivity.this, "ESP32 IOT", "Máy bơm đã được tắt!");
+            }
+        }
+
+        Notification.showNotification(MainActivity.this, "ESP32 IOT",
+                (state == 1 ? "Bật" : "Tắt") + " máy bơm lúc: " + hour + "g : " + minute + "p | Ngày: " + day + "/" + (month+1) + "/" + year);
+    }
+
+
 }
 
