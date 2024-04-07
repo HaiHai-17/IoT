@@ -1,13 +1,15 @@
 package com.example.iot2;
 
 import androidx.annotation.NonNull;
-import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 
+import android.app.AlarmManager;
 import android.app.DatePickerDialog;
+import android.app.PendingIntent;
 import android.app.TimePickerDialog;
-import android.content.DialogInterface;
+import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.view.ContextMenu;
 import android.view.Menu;
@@ -15,6 +17,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ImageView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import com.github.lzyzsd.circleprogress.CircleProgress;
@@ -31,9 +34,14 @@ public class MainActivity extends AppCompatActivity {
 
     ImageView pump1, pump2, rain, human;
     CircleProgress humi_bar, temp_bar;
-    int valueHumi, valueTemp;
-    private Calendar calendar, selectedCalendar;
+    int valueHumi;
+    int valueTemp;
+    int pumpState;
+    private Calendar calendar;
     private int year, month, day, hour, minute;
+    private AlarmManager alarmManager;
+    private TimePickerDialog timePickerDialog;
+    private PendingIntent pendingIntent;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -41,6 +49,7 @@ public class MainActivity extends AppCompatActivity {
         setContentView(R.layout.activity_main);
 
         FirebaseApp.initializeApp(this);
+        alarmManager = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
 
         pump1 = findViewById(R.id.imgPump1);
         pump2 = findViewById(R.id.imgPump2);
@@ -170,6 +179,7 @@ public class MainActivity extends AppCompatActivity {
             finish();
             return true;
         }
+
         return super.onOptionsItemSelected(item);
     }
 
@@ -240,68 +250,35 @@ public class MainActivity extends AppCompatActivity {
 
     // Hiển thị TimePickerDialog
     private void showTimePicker() {
-        TimePickerDialog timePickerDialog = new TimePickerDialog(MainActivity.this,
-                (view, hourOfDay, minute) -> {
-                    this.hour = hourOfDay;
-                    this.minute = minute;
-                    // Thực hiện xử lý hẹn giờ hoặc đặt lịch ở đây
-                    handleDateTimeSelection();
-                }, hour, minute, true);
+        final Calendar calendar = Calendar.getInstance();
+        int hour = calendar.get(Calendar.HOUR_OF_DAY);
+        int minute = calendar.get(Calendar.MINUTE);
+
+        timePickerDialog = new TimePickerDialog(MainActivity.this, new TimePickerDialog.OnTimeSetListener() {
+            @Override
+            public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                setAlarm(hourOfDay, minute);
+            }
+        }, hour, minute, true);
+
+        timePickerDialog.setTitle("Chọn thời gian báo thức");
         timePickerDialog.show();
     }
 
-    private void handleDateTimeSelection() {
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Chức năng hẹn giờ");
-        builder.setMessage(hour + "g : " + minute + "p | Ngày: " + day + "/" + (month+1) + "/" + year );
+    private void setAlarm(int hourOfDay, int minute) {
+        // Thiết lập báo thức cho thời gian được chọn
+        calendar.set(Calendar.HOUR_OF_DAY, hourOfDay);
+        calendar.set(Calendar.MINUTE, minute);
 
-        builder.setPositiveButton("Bật", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                setPumpState(1);
-            }
-        });
+        // Tạo Intent để gửi tới BroadcastReceiver của bạn
+        Intent alarmIntent = new Intent(this, AlarmReceiver.class);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
 
-        builder.setNegativeButton("Tắt", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                setPumpState(0);
-            }
-        });
+        // Đặt báo thức với AlarmManager
+        alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);
 
-        builder.show();
-    }
-
-    private void setPumpState(int state) {
-        FirebaseDatabase database = FirebaseDatabase.getInstance();
-        DatabaseReference myRef = database.getReference("/pump/pump1");
-
-        DatabaseReference scheduleRef = database.getReference("/schedule");
-        scheduleRef.child("hour").setValue(hour);
-        scheduleRef.child("minute").setValue(minute);
-        scheduleRef.child("day").setValue(day);
-        scheduleRef.child("month").setValue(month+1);
-        scheduleRef.child("year").setValue(year);
-
-        selectedCalendar = Calendar.getInstance();
-        selectedCalendar.set(Calendar.YEAR, year);
-        selectedCalendar.set(Calendar.MONTH, month);
-        selectedCalendar.set(Calendar.DAY_OF_MONTH, day);
-        selectedCalendar.set(Calendar.HOUR_OF_DAY, hour);
-        selectedCalendar.set(Calendar.MINUTE, minute);
-        Calendar currentCalendar = Calendar.getInstance();
-
-        if (currentCalendar.compareTo(selectedCalendar) >= 0) {
-            myRef.setValue(state);
-            if (state == 1) {
-                Notification.showNotification(MainActivity.this, "ESP32 IOT", "Máy bơm đã được bật!");
-            } else {
-                Notification.showNotification(MainActivity.this, "ESP32 IOT", "Máy bơm đã được tắt!");
-            }
-        }
-
-        Notification.showNotification(MainActivity.this, "ESP32 IOT",
-                (state == 1 ? "Bật" : "Tắt") + " máy bơm lúc: " + hour + "g : " + minute + "p | Ngày: " + day + "/" + (month+1) + "/" + year);
+        // Hiển thị thông báo cho người dùng
+        Toast.makeText(this, "Báo thức đã được đặt vào " + hourOfDay + ":" + minute, Toast.LENGTH_SHORT).show();
     }
 
 

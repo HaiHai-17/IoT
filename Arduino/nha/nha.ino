@@ -8,6 +8,7 @@
 #include <WebServer.h>
 #include <ESPmDNS.h>
 #include <HTTPUpdateServer.h>
+#include <BluetoothSerial.h>
 //Cấu hình server update OTA
 const char* host = "ESP32";
 const char* updatePath = "/update";
@@ -15,6 +16,7 @@ const char* updateUsername = "admin";
 const char* updatePassword = "admin";
 WebServer webServer(80);
 HTTPUpdateServer httpUpdater;
+BluetoothSerial SerialBT;
 //Cấu hình wifi
 #define WIFI_SSID "HOI DONG PHE 2.4Ghz"
 #define WIFI_PASSWORD "0336468470"
@@ -73,6 +75,7 @@ const char MainPage[] PROGMEM = R"=====(
 void setup()
 {
   Serial.begin(115200);
+  SerialBT.begin("ESP32"); // Tên Bluetooth của ESP32
   //Kết nối wifi
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   Serial.print("Đang kết nối với Wi-Fi");
@@ -145,6 +148,12 @@ void loop()
 {
   //MDNS.update();
   webServer.handleClient();
+  if (SerialBT.available()) {
+    String message = SerialBT.readStringUntil('\n');
+    if (message.length() > 0) {
+      changeWiFi(message); // Gọi hàm changeWiFi() khi nhận được dữ liệu từ Bluetooth
+    }
+  }
   if (millis() - dataMillis > 1000)
   {
     dataMillis = millis();
@@ -243,19 +252,68 @@ void setRelay() {
   if (Firebase.getInt(firebaseData, "/pump/pump1")) {
     if (firebaseData.dataType() == "int") {
       pump1State = firebaseData.intData();
-      digitalWrite(pump1, pump1State);
+      // Kiểm tra trạng thái hiện tại của máy bơm trước khi thay đổi
+      if (pump1State != digitalRead(pump1)) {
+        digitalWrite(pump1, pump1State);
+        // Xác nhận rằng lệnh đã được thực hiện thành công
+        if (digitalRead(pump1) == pump1State) {
+          Serial.println("Đã kích hoạt máy bơm 1");
+        } else {
+          Serial.println("Lỗi: Không thể kích hoạt máy bơm 1");
+        }
+      }
     }
   } else {
     digitalWrite(pump1, LOW);
+    Serial.println("Tắt máy bơm 1");
   }
   
   if (Firebase.getInt(firebaseData, "/pump/pump2")) {
     if (firebaseData.dataType() == "int") {
       pump2State = firebaseData.intData();
-      digitalWrite(pump2, pump2State);
+      // Kiểm tra trạng thái hiện tại của máy bơm trước khi thay đổi
+      if (pump2State != digitalRead(pump2)) {
+        digitalWrite(pump2, pump2State);
+        // Xác nhận rằng lệnh đã được thực hiện thành công
+        if (digitalRead(pump2) == pump2State) {
+          Serial.println("Đã kích hoạt máy bơm 2");
+        } else {
+          Serial.println("Lỗi: Không thể kích hoạt máy bơm 2");
+        }
+      }
     }
   } else {
     digitalWrite(pump2, LOW);
+    Serial.println("Tắt máy bơm 2");
   }
+}
+
+
+void changeWiFi(String data) {
+  String name = data.substring(0, data.indexOf(','));
+  String pass = data.substring(data.indexOf(',') + 1);
+
+  // In thông tin nhận được từ Bluetooth
+  display.clearDisplay();
+  display.setTextSize(1);
+  display.setTextColor(SSD1306_WHITE);
+  display.setCursor(0, 0);
+  display.print("Received name: ");
+  display.println(name);
+  display.print("Received pass: ");
+  display.println(pass);
+
+  // Thiết lập thông tin Wi-Fi mới
+  WiFi.disconnect();
+  delay(1000); // Đợi cho WiFi đóng kết nối
+
+  WiFi.begin(name.c_str(), pass.c_str());
+
+  while (WiFi.status() != WL_CONNECTED) {
+    delay(1000);
+    display.println("Connecting to new WiFi...");
+  }
+
+  display.println("Connected to new WiFi");
 }
 
