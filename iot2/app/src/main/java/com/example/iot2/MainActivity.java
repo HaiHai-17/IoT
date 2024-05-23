@@ -239,14 +239,32 @@ public class MainActivity extends AppCompatActivity {
     private void showDatePicker() {
         DatePickerDialog datePickerDialog = new DatePickerDialog(MainActivity.this,
                 (view, year, monthOfYear, dayOfMonth) -> {
-                    this.year = year;
-                    this.month = monthOfYear;
-                    this.day = dayOfMonth;
-                    // Hiển thị TimePickerDialog sau khi chọn ngày
-                    showTimePicker();
+                    // Lấy ngày hiện tại
+                    Calendar currentCalendar = Calendar.getInstance();
+                    currentCalendar.set(Calendar.HOUR_OF_DAY, 0); // Đặt giờ về 0 để so sánh chỉ ngày
+                    currentCalendar.set(Calendar.MINUTE, 0);
+                    currentCalendar.set(Calendar.SECOND, 0);
+                    currentCalendar.set(Calendar.MILLISECOND, 0);
+
+                    // Lấy ngày đã chọn
+                    Calendar selectedDate = Calendar.getInstance();
+                    selectedDate.set(year, monthOfYear, dayOfMonth, 0, 0, 0);
+                    selectedDate.set(Calendar.MILLISECOND, 0);
+
+                    // Kiểm tra nếu ngày đã chọn nằm trong quá khứ
+                    if (selectedDate.before(currentCalendar)) {
+                        Toast.makeText(MainActivity.this, "Ngày được chọn không hợp lệ. Vui lòng chọn một ngày trong tương lai.", Toast.LENGTH_SHORT).show();
+                    } else {
+                        this.year = year;
+                        this.month = monthOfYear;
+                        this.day = dayOfMonth;
+                        // Hiển thị TimePickerDialog sau khi chọn ngày hợp lệ
+                        showTimePicker();
+                    }
                 }, year, month, day);
         datePickerDialog.show();
     }
+
 
     // Hiển thị TimePickerDialog
     private void showTimePicker() {
@@ -272,7 +290,8 @@ public class MainActivity extends AppCompatActivity {
 
         // Tạo Intent để gửi tới BroadcastReceiver của bạn
         Intent alarmIntent = new Intent(this, AlarmReceiver.class);
-        pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT);
+        pendingIntent = PendingIntent.getBroadcast(this, 0, alarmIntent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+
 
         // Đặt báo thức với AlarmManager
         alarmManager.set(AlarmManager.RTC_WAKEUP, calendar.getTimeInMillis(), pendingIntent);

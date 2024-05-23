@@ -18,8 +18,8 @@ WebServer webServer(80);
 HTTPUpdateServer httpUpdater;
 BluetoothSerial SerialBT;
 //Cấu hình wifi
-#define WIFI_SSID "HOI DONG PHE 2.4Ghz"
-#define WIFI_PASSWORD "0336468470"
+#define WIFI_SSID "My Nhung"
+#define WIFI_PASSWORD "0932472990"
 //Cấu hình Firebase
 #define API_KEY "AIzaSyA1omfSWO-G6lS7tMdduZF3i78oiv_1wLM"
 #define USER_EMAIL "kudohainguyen@gmail.com"
